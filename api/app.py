@@ -76,7 +76,7 @@ class handler(BaseHTTPRequestHandler):
         else:
             self.send_error(404, "Not Found")
 
-def run(server_class=HTTPServer, handler_class=RequestHandler, port=5000):
+def run(server_class=HTTPServer, handler_class=handler, port=5000):
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
     print(f'Starting server on port {port}...')
