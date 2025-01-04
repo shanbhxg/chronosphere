@@ -27,7 +27,7 @@ def fetch_user_posts(handle):
         print(f"Error fetching data: {response.status_code}")
         return []
 
-class RequestHandler(BaseHTTPRequestHandler):
+class handler(BaseHTTPRequestHandler):
 
     def _set_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
