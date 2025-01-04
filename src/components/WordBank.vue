@@ -75,9 +75,12 @@ export default {
 
       this.loading = true;
       this.error = null;
+      const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === 'atmosphere.vercel.app'
+        ? 'http://127.0.0.1:5000/words'
+        : 'https://atmosphere.vercel.app/api/words';
 
       try {
-        const response = await axios.get('http://127.0.0.1:5000/api/words', {
+        const response = await axios.get(baseUrl, {
           params: { handle: this.handle },
         });
 

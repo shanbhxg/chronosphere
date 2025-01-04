@@ -29,7 +29,7 @@ def fetch_user_posts(handle):
         print(f"Error fetching data: {response.status_code}")
         return []
 
-@app.route('/api/words', methods=['GET'])
+@app.route('/words', methods=['GET'])
 def get_words():
     handle = request.args.get('handle')
     if not handle:
@@ -45,16 +45,10 @@ def get_words():
     for post in posts:
         text = post.get('post', {}).get('record', {}).get('text', '')
         if text:
-            # Extract words, only alphabetic characters
             extracted_words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
-            # Remove stopwords
             filtered_words = [word for word in extracted_words if word not in stopwords]
             all_words.extend(filtered_words)
-
-    # Count word frequencies
     word_counts = Counter(all_words)
-
-    # Get the top 5 most common words
     top_words = word_counts.most_common(5)
 
     return jsonify({
