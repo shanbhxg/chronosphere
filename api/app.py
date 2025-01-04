@@ -29,6 +29,11 @@ def fetch_user_posts(handle):
 
 class RequestHandler(BaseHTTPRequestHandler):
 
+    def _set_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+
     def do_GET(self):
         parsed_url = urlparse(self.path)
         path = parsed_url.path
@@ -65,8 +70,7 @@ class RequestHandler(BaseHTTPRequestHandler):
             }
 
             self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
+            self._set_headers()
             self.wfile.write(json.dumps(response).encode())
 
         else:
