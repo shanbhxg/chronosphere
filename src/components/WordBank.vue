@@ -75,8 +75,8 @@ export default {
 
       this.loading = true;
       this.error = null;
-      const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === 'atmosphere.vercel.app'
-        ? 'http://127.0.0.1:5000/words'
+      const baseUrl = window.location.hostname.includes('localhost')
+        ? 'http://127.0.0.1:5000/api/words'
         : 'https://atmosphere.vercel.app/api/words';
 
       try {
@@ -91,7 +91,9 @@ export default {
         }
       } catch (error) {
         console.error('Error fetching data:', error);
-        this.error = 'Error fetching data from server.';
+        this.error = error.response
+          ? `Error fetching data from server: ${error.response.statusText}`
+          : 'Error fetching data from server.';
       } finally {
         this.loading = false;
       }
@@ -110,7 +112,6 @@ export default {
 }
 
 .card-body {
-  /* center alignment */
   display: flex;
   flex-direction: column;
 }
@@ -126,6 +127,7 @@ button:disabled {
 .form-control::placeholder { 
   color: grey;
 }
+
 .list-group-item {
   font-size: 1.1rem;
   padding: 0.6rem;
@@ -135,6 +137,4 @@ button:disabled {
   font-size: 1.2rem;
   color: black !important;
 }
-
-
 </style>

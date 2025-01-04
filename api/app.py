@@ -1,11 +1,9 @@
 import re
 from collections import Counter
 import requests
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-
-app = Flask(__name__)
-CORS(app)
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+from urllib.parse import parse_qs, urlparse
 
 def load_stopwords():
     try:
@@ -29,32 +27,56 @@ def fetch_user_posts(handle):
         print(f"Error fetching data: {response.status_code}")
         return []
 
-@app.route('/words', methods=['GET'])
-def get_words():
-    handle = request.args.get('handle')
-    if not handle:
-        return jsonify({"error": "No handle provided"}), 400
+class RequestHandler(BaseHTTPRequestHandler):
 
-    posts = fetch_user_posts(handle)
-    if not posts:
-        return jsonify({"error": "No posts found for this handle"}), 404
+    def do_GET(self):
+        parsed_url = urlparse(self.path)
+        path = parsed_url.path
+        query = parse_qs(parsed_url.query)
 
-    all_words = []
-    stopwords = load_stopwords()
+        if path == '/api/words':
+            handle = query.get('handle', [None])[0]
 
-    for post in posts:
-        text = post.get('post', {}).get('record', {}).get('text', '')
-        if text:
-            extracted_words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
-            filtered_words = [word for word in extracted_words if word not in stopwords]
-            all_words.extend(filtered_words)
-    word_counts = Counter(all_words)
-    top_words = word_counts.most_common(5)
+            if not handle:
+                self.send_error(400, "No handle provided")
+                return
 
-    return jsonify({
-        "handle": handle,
-        "top_words": top_words
-    })
+            posts = fetch_user_posts(handle)
+            if not posts:
+                self.send_error(404, "No posts found for this handle")
+                return
+
+            all_words = []
+            stopwords = load_stopwords()
+
+            for post in posts:
+                text = post.get('post', {}).get('record', {}).get('text', '')
+                if text:
+                    extracted_words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+                    filtered_words = [word for word in extracted_words if word not in stopwords]
+                    all_words.extend(filtered_words)
+
+            word_counts = Counter(all_words)
+            top_words = word_counts.most_common(5)
+
+            response = {
+                "handle": handle,
+                "top_words": top_words
+            }
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
+
+        else:
+            self.send_error(404, "Not Found")
+
+def run(server_class=HTTPServer, handler_class=RequestHandler, port=5000):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    print(f'Starting server on port {port}...')
+    httpd.serve_forever()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    run()
