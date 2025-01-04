@@ -7,6 +7,14 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+def load_stopwords():
+    try:
+        with open('stopwords/stopwords.txt', 'r', encoding='utf-16-le') as f:
+            return set(f.read().splitlines())
+    except Exception as e:
+        print(f"Error loading stopwords: {e}")
+        return set()
+
 def fetch_user_posts(handle):
     url = 'https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed'
     params = {
@@ -32,13 +40,21 @@ def get_words():
         return jsonify({"error": "No posts found for this handle"}), 404
 
     all_words = []
+    stopwords = load_stopwords()
+
     for post in posts:
         text = post.get('post', {}).get('record', {}).get('text', '')
         if text:
-            extracted_words = re.findall(r'\b\w+\b', text.lower())
-            all_words.extend(extracted_words)
+            # Extract words, only alphabetic characters
+            extracted_words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+            # Remove stopwords
+            filtered_words = [word for word in extracted_words if word not in stopwords]
+            all_words.extend(filtered_words)
 
+    # Count word frequencies
     word_counts = Counter(all_words)
+
+    # Get the top 5 most common words
     top_words = word_counts.most_common(5)
 
     return jsonify({
